@@ -22,6 +22,8 @@ public class movement : MonoBehaviour
     private float slowFall= 100f;
     private bool canSlow = true;
     private bool waitToSlow = false;
+    public bool winCon = false;
+    public bool gameOverCon = false;
     IEnumerator DestroyFloor()
     {
         yield return new WaitForSeconds(destroyFloorTime); // Wait for the specified delay
@@ -54,6 +56,14 @@ public class movement : MonoBehaviour
         {
             StopTimer();
             rb.constraints = RigidbodyConstraints.FreezeAll;
+            gameOverCon = true;
+            Destroy(gameObject,destroyTime);
+        }
+        else if (other.gameObject.CompareTag("endPoint"))
+        {
+            StopTimer();
+            rb.constraints = RigidbodyConstraints.FreezeAll;
+            winCon = true;
             Destroy(gameObject,destroyTime);
         }
     }
@@ -133,9 +143,9 @@ public class movement : MonoBehaviour
                 rb.drag = 0;
             }
         }
-        else if ((slowFall >= 0 || slowFall <= 99) && slowFall == 100 && waitToSlow && !canSlow)
+        else if ((slowFall >= 0 || slowFall <= 99)  && waitToSlow && !canSlow)
         {
-            slowFall+=0.5f;
+            slowFall+=0.7f;
         }
         /*else if ((slowFall == 0||slowFall<=99))
         {
