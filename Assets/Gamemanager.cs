@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Gamemanager : MonoBehaviour
 {
@@ -12,6 +13,9 @@ public class Gamemanager : MonoBehaviour
     [SerializeField]List<GameObject> gameOver;
     [SerializeField]List<GameObject> gameWin;
     [SerializeField] private GameObject endPoint;
+    public AudioClip cilp,cilp1;
+    
+    public AudioSource source;
     public void GameOverSetup()
     {
         foreach (GameObject gameObject in gameOver)
@@ -23,18 +27,26 @@ public class Gamemanager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-       
+        
     }
 
-   
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+    public void GoToMainMenu()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex-1);
+    }
+
+    
     public void GameOver()
     {
         if (ball == null&&_movement.gameOverCon)
         {
             if (!soundPlayed)
             {
-                // Play sound here
-                // GetComponent<AudioSource>().Play();
+                source.PlayOneShot(cilp);
                 soundPlayed = true;
             }
 
@@ -56,8 +68,8 @@ public class Gamemanager : MonoBehaviour
         {
             if (!soundPlayed)
             {
-                // Play sound here
-                // GetComponent<AudioSource>().Play();
+                source.PlayOneShot(cilp1);
+               
                 soundPlayed = true;
             }
 

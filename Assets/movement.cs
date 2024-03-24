@@ -24,6 +24,8 @@ public class movement : MonoBehaviour
     private bool waitToSlow = false;
     public bool winCon = false;
     public bool gameOverCon = false;
+    public AudioClip bg;
+    public AudioSource source;
     IEnumerator DestroyFloor()
     {
         yield return new WaitForSeconds(destroyFloorTime); // Wait for the specified delay
@@ -47,6 +49,7 @@ public class movement : MonoBehaviour
             Debug.LogError("No Floor object assigned in the Inspector!");
         }
 
+        source = GetComponent<AudioSource>();
         slowBar.maxValue = slowFall;
         
     }
@@ -57,12 +60,14 @@ public class movement : MonoBehaviour
             StopTimer();
             rb.constraints = RigidbodyConstraints.FreezeAll;
             gameOverCon = true;
+            source.enabled = false;
             Destroy(gameObject,destroyTime);
         }
         else if (other.gameObject.CompareTag("endPoint"))
         {
             StopTimer();
             rb.constraints = RigidbodyConstraints.FreezeAll;
+            source.enabled = false;
             winCon = true;
             Destroy(gameObject,destroyTime);
         }
@@ -165,7 +170,7 @@ public class movement : MonoBehaviour
 
       
         
-        Debug.Log("Current value of im: " + slowFall);
+     
     }
     // เริ่มเครื่องจับเวลาใหม่
     public void StartTimer()
