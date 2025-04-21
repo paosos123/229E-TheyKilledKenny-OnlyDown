@@ -1,193 +1,261 @@
 using System.Collections;
-using System.Collections.Generic;
-using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using UnityEngine.InputSystem;
 
-public class movement : MonoBehaviour
+public class Movement : MonoBehaviour
 {
+    [Header("Movement")]
+    [SerializeField] private float speed = 10f;
+    [SerializeField] private float airDrag = 2f;
+    private Rigidbody rb;
+    private Vector2 moveInput;
+
+    [Header("Slow Bar")]
     public Slider slowBar;
-    [SerializeField] private float airDrag;
-    [SerializeField]private float speed ;
-    [SerializeField] Collision collision;
-    private Rigidbody rb;   
+    [SerializeField] private float maxSlowFall = 100f;
+    [SerializeField] private float slowFallDecreaseRate = 1.2f;
+    [SerializeField] private float slowFallIncreaseRate = 0.7f;
+    private float currentSlowFall;
+    private bool canSlow = true;
+    private bool isWaitingToSlow = false;
+
+    [Header("Timer")]
     public TMP_Text timerText;
     private float startTime;
-    private bool timerActive;
+    private bool isTimerActive;
+
+    [Header("Floor Destruction")]
     [SerializeField] private GameObject floor;
-    private bool isFloorDestroyed; // Flag to track floor destruction state
-    [SerializeField]private float destroyTime = 2f; // Time delay 
-    [SerializeField]private float destroyFloorTime = 3f;
-    private float slowFall= 100f;
-    private bool canSlow = true;
-    private bool waitToSlow = false;
-    public bool winCon = false;
-    public bool gameOverCon = false;
-    public AudioClip bg;
-    public AudioSource source;
-    IEnumerator DestroyFloor()
+    [SerializeField] private float delayBeforeDestroyFloor = 3f;
+
+    [Header("Game Over Conditions")]
+    [SerializeField] private float delayBeforeDestroyObject = 2f;
+    public bool winCondition = false;
+    public bool gameOverCondition = false;
+    [SerializeField] private string trapTag = "Trap";
+    [SerializeField] private string endPointTag = "endPoint";
+
+    [Header("UI Panels")]
+    public GameObject gameOverPanel; // กำหนด Panel GameOver ใน Inspector
+    public GameObject winPanel;     // กำหนด Panel Win ใน Inspector
+    public GameObject BGPanel; // กำหนด Panel GameOver ใน Inspector
+    public GameObject BarSkillPanel;  
+    [SerializeField] private float panelDelay = 2f; // หน่วงเวลาก่อนแสดง Panel
+
+    private PlayerInput playerInput;
+    private bool isSkillHeld = false;
+    private InputAction skillAction;
+
+    void Awake()
     {
-        yield return new WaitForSeconds(destroyFloorTime); // Wait for the specified delay
-        // Destroy the floor object (assuming it's a child of this game object)
-        Destroy(floor); // Adjust this line if the floor has a different name or structure
-        StartTimer(); // Set startTime to true after destroying the floor
-        yield return null; // End the coroutine
+        playerInput = GetComponent<PlayerInput>();
+        if (playerInput == null)
+        {
+            Debug.LogError("PlayerInput component not found on this GameObject.");
+            enabled = false;
+            return;
+        }
+
+        skillAction = playerInput.actions["Skill"];
+        if (skillAction == null)
+        {
+            Debug.LogError("Action 'Skill' not found in PlayerInput.");
+            enabled = false;
+            return;
+        }
+
+        skillAction.performed += OnSkillPerformed;
+        skillAction.canceled += OnSkillCanceled;
     }
-    // Start is called before the first frame update
+
+    void OnDestroy()
+    {
+        if (skillAction != null)
+        {
+            skillAction.performed -= OnSkillPerformed;
+            skillAction.canceled -= OnSkillCanceled;
+        }
+    }
+
     void Start()
     {
-        StartCoroutine(DestroyFloor());
-        rb = gameObject.GetComponent<Rigidbody>();
-        // เริ่มต้นเวลาที่ startTime เป็นเวลาปัจจุบัน
+        rb = GetComponent<Rigidbody>();
+        currentSlowFall = maxSlowFall;
+
+        if (slowBar != null)
+        {
+            slowBar.maxValue = maxSlowFall;
+            slowBar.value = currentSlowFall;
+        }
+        else
+        {
+            Debug.LogError("Slow bar Slider is not assigned in the Inspector!");
+        }
+
         if (floor != null)
         {
-            Destroy(floor, destroyFloorTime);
+            StartCoroutine(DestroyFloorWithDelay());
         }
         else
         {
-            Debug.LogError("No Floor object assigned in the Inspector!");
+            Debug.LogError("Floor GameObject is not assigned in the Inspector!");
         }
 
-        source = GetComponent<AudioSource>();
-        slowBar.maxValue = slowFall;
-        
+        // ปิด Panel เริ่มต้น
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (winPanel != null) winPanel.SetActive(false);
     }
-    private void OnCollisionEnter (Collision other)
+
+    IEnumerator DestroyFloorWithDelay()
     {
-        if (other.gameObject.CompareTag("Trap")) // I'm touching ground for first time
+        yield return new WaitForSeconds(delayBeforeDestroyFloor);
+        Destroy(floor);
+        StartTimer();
+    }
+
+    void OnCollisionEnter(Collision other)
+    {
+        if (other.gameObject.CompareTag(trapTag))
         {
-            StopTimer();
-            rb.constraints = RigidbodyConstraints.FreezeAll;
-            gameOverCon = true;
-            source.enabled = false;
-            Destroy(gameObject,destroyTime);
+            HandleGameOver();
         }
-        else if (other.gameObject.CompareTag("endPoint"))
+        else if (other.gameObject.CompareTag(endPointTag))
         {
-            StopTimer();
-            rb.constraints = RigidbodyConstraints.FreezeAll;
-            source.enabled = false;
-            winCon = true;
-            Destroy(gameObject,destroyTime);
+            HandleWinCondition();
         }
     }
 
-   
-    // Update is called once per frame
+    void HandleGameOver()
+    {
+        StopTimer();
+        FreezeRigidbody();
+        gameOverCondition = true;
+        StartCoroutine(ShowGameOverPanelWithDelay());
+    }
+
+    IEnumerator ShowGameOverPanelWithDelay()
+    {
+        yield return new WaitForSeconds(panelDelay);
+        gameOverPanel.SetActive(true);
+        BGPanel.SetActive(true);
+        BarSkillPanel.SetActive(false);
+        Destroy(gameObject);
+    }
+
+    void HandleWinCondition()
+    {
+        StopTimer();
+        FreezeRigidbody();
+        winCondition = true;
+        StartCoroutine(ShowWinPanelWithDelay());
+    }
+
+    IEnumerator ShowWinPanelWithDelay()
+    {
+        yield return new WaitForSeconds(panelDelay);
+            winPanel.SetActive(true);
+            BGPanel.SetActive(true);
+            BarSkillPanel.SetActive(false);
+        Destroy(gameObject);
+    }
+
+    void FreezeRigidbody()
+    {
+        if (rb != null)
+        {
+            rb.constraints = RigidbodyConstraints.FreezeAll;
+        }
+    }
+
     void Update()
     {
-        /*if (Input.GetKey(KeyCode.Q)&&slowFall >=0)
+        if (isTimerActive && timerText != null)
         {
-            rb.drag = airDrag;
-        }
-        else
-        {
-            rb.drag = 0;
-        }*/
-        //Timer
-        if (timerActive)
-        {
-            // คำนวณเวลาที่ผ่านไป
-            float t = Time.time - startTime;
-
-            // แปลงเวลาให้อยู่ในรูปแบบนาที:วินาที:เซ็คเม้นต์
-            string minutes = ((int) t / 60).ToString("00");
-            string seconds = (t % 60).ToString("00");
-            string milliseconds = ((int) (t * 1000) % 1000).ToString("000");
-
-            // แสดงผลลัพธ์บน Text UI
-            timerText.text = minutes + ":" + seconds + ":" + milliseconds;
-            
+            float elapsedTime = Time.time - startTime;
+            string minutes = ((int)elapsedTime / 60).ToString("00");
+            string seconds = (elapsedTime % 60).ToString("00");
+            string milliseconds = ((int)(elapsedTime * 1000) % 1000).ToString("000");
+            timerText.text = $"{minutes}:{seconds}:{milliseconds}";
         }
 
-        slowBar.value = slowFall;
-
+        if (slowBar != null)
+        {
+            slowBar.value = currentSlowFall;
+        }
     }
 
     void FixedUpdate()
     {
-        if (Input.GetAxis("Horizontal") > 0)
-        {
-            rb.AddForce(Vector3.right*speed);
-        }
-        else if (Input.GetAxis("Horizontal")<0)
-        {
-            rb.AddForce(-Vector3.right*speed);
-        }
+        HandleMovementInput();
+        HandleSlowMotionMechanic();
 
-        if (Input.GetAxis("Vertical") > 0)
+        Vector3 move = new Vector3(moveInput.x, 0, moveInput.y).normalized;
+        rb.AddForce(move * speed, ForceMode.Force);
+    }
+
+    void HandleMovementInput()
+    {
+        moveInput = playerInput.actions["move"].ReadValue<Vector2>();
+    }
+
+    void OnSkillPerformed(InputAction.CallbackContext context)
+    {
+        isSkillHeld = true;
+    }
+
+    void OnSkillCanceled(InputAction.CallbackContext context)
+    {
+        isSkillHeld = false;
+    }
+
+    void HandleSlowMotionMechanic()
+    {
+        if (isWaitingToSlow && !canSlow)
         {
-            rb.AddForce(Vector3.forward* speed);
+            currentSlowFall = Mathf.Min(currentSlowFall + slowFallIncreaseRate * Time.fixedDeltaTime * 60f, maxSlowFall);
+            if (currentSlowFall >= maxSlowFall)
+            {
+                canSlow = true;
+                isWaitingToSlow = false;
+            }
         }
-        else if(Input.GetAxis("Vertical")<0)
+        else if (canSlow)
         {
-            rb.AddForce(-Vector3.forward*speed);
-        }
-        if (slowFall==100&&waitToSlow&&!canSlow)
-        {
-            canSlow = true;
-            waitToSlow = false;
-            // ลดค่า int ลง
-        }
-        else if(waitToSlow == false&&canSlow)
-        {
-            if ( Input.GetKey(KeyCode.Q)&&slowFall != 0 )
+            if (isSkillHeld && currentSlowFall > 0)
             {
                 rb.drag = airDrag;
-                slowFall-=1.2f;
+                currentSlowFall -= slowFallDecreaseRate * Time.fixedDeltaTime * 60f;
+                if (currentSlowFall <= 0)
+                {
+                    currentSlowFall = 0;
+                    isWaitingToSlow = true;
+                    canSlow = false;
+                    rb.drag = 0;
+                }
             }
             else
             {
                 rb.drag = 0;
             }
-            if(slowFall == 0)
-            {
-                waitToSlow = true;
-                canSlow = false;
-                rb.drag = 0;
-            }
         }
-        else if ((slowFall >= 0 || slowFall <= 99)  && waitToSlow && !canSlow)
-        {
-            slowFall+=0.7f;
-        }
-        /*else if ((slowFall == 0||slowFall<=99))
-        {
-            rb.drag = 0;
-            slowFall+=0.5f;
-            waitToSlow = true;
-            canSlow = false;
-        }*/
-        if (slowFall >= 100)
-        {
-            slowFall = 100;
-        }
-        else if(slowFall <=0)
-        {
-            slowFall = 0;
-        }
-
-      
-        
-     
+        currentSlowFall = Mathf.Clamp(currentSlowFall, 0f, maxSlowFall);
     }
-    // เริ่มเครื่องจับเวลาใหม่
+
     public void StartTimer()
     {
         startTime = Time.time;
-        timerActive = true;
+        isTimerActive = true;
     }
 
-    // หยุดเครื่องจับเวลา
     public void StopTimer()
     {
-        timerActive = false;
+        isTimerActive = false;
     }
-    // รีเซ็ตเครื่องจับเวลา
+
     public void ResetTimer()
     {
         startTime = Time.time;
     }
-
 }
