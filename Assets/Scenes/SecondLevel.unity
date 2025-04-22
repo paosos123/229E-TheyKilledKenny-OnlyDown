@@ -10747,10 +10747,6 @@ PrefabInstance:
       propertyPath: triggerFallDecreaseRate
       value: 0.5
       objectReference: {fileID: 0}
-    - target: {fileID: 1331860654942168627, guid: 690ecd0da505aeb428db55e085523bb7, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: -0.14
-      objectReference: {fileID: 0}
     - target: {fileID: 4434772320782663712, guid: 690ecd0da505aeb428db55e085523bb7, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.010374028
@@ -10776,16 +10772,12 @@ PrefabInstance:
       value: Ball
       objectReference: {fileID: 0}
     - target: {fileID: 5534017153221715843, guid: 690ecd0da505aeb428db55e085523bb7, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0.12340631
-      objectReference: {fileID: 0}
-    - target: {fileID: 5534017153221715843, guid: 690ecd0da505aeb428db55e085523bb7, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5534017153221715843, guid: 690ecd0da505aeb428db55e085523bb7, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 314.35
+      value: 314.39
       objectReference: {fileID: 0}
     - target: {fileID: 5534017153221715843, guid: 690ecd0da505aeb428db55e085523bb7, type: 3}
       propertyPath: m_LocalPosition.z
