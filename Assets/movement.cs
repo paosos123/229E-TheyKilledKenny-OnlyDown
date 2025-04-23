@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+
 public class Movement : MonoBehaviour
 {
     [Header("Movement")]
@@ -55,7 +56,7 @@ public class Movement : MonoBehaviour
     private InputAction skillAction;
     private SphereCollider sphereCollider;
     private bool hasSkillBeenSelected = false;
-
+    public int nextSceneLoad;
     void Awake()
     {
         playerInput = GetComponent<PlayerInput>();
@@ -95,7 +96,7 @@ public class Movement : MonoBehaviour
 
     void Start()
     {
-   
+        nextSceneLoad = SceneManager.GetActiveScene().buildIndex + 1;
         rb = GetComponent<Rigidbody>();
         currentSlowFall = maxSlowFall;
 
@@ -129,6 +130,16 @@ public class Movement : MonoBehaviour
         }
         else if (other.gameObject.CompareTag(endPointTag))
         {
+            if (SceneManager.GetActiveScene().buildIndex == 3)
+            {
+               
+            }
+            else 
+            {
+                PlayerPrefs.SetInt("levelAt", nextSceneLoad);
+              
+                PlayerPrefs.Save();
+            }
             HandleWinCondition();
         }
     }
@@ -140,6 +151,16 @@ public class Movement : MonoBehaviour
         {
             if (other.CompareTag(endPointTag)) // เปลี่ยนจาก trapTag เป็น endPointTag ตามบริบท OnTriggerEnter ที่คุณถามถึง
             {
+                if (SceneManager.GetActiveScene().buildIndex == 3)
+                {
+                    
+                }
+                else 
+                {
+                    PlayerPrefs.SetInt("levelAt", nextSceneLoad);
+              
+                    PlayerPrefs.Save();
+                }
                 HandleWinCondition();
             }
         }
@@ -195,6 +216,10 @@ public class Movement : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            PlayerPrefs.DeleteAll();
+        }
         if (currentSkillMode == SkillMode.SlowMotion || currentSkillMode == SkillMode.ToggleTrigger)
         {
             skillPanel.SetActive(false);
