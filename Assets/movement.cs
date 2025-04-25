@@ -60,6 +60,7 @@ public class Movement : MonoBehaviour
 
     private bool isContinueUsed = false;
     private RewardAds rewardAds;
+
     void Awake()
     {
         playerInput = GetComponent<PlayerInput>();
@@ -351,6 +352,7 @@ public class Movement : MonoBehaviour
         {
             currentSkillMode = (SkillMode)modeIndex;
             Debug.Log("Skill Mode changed to: " + currentSkillMode);
+            AnalyticManager.instance.OnItemUse(currentSkillMode.ToString());
         }
         else
         {

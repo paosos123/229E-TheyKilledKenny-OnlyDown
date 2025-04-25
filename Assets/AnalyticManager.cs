@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Services.Core;
@@ -27,12 +27,15 @@ public class AnalyticManager : MonoBehaviour
 
     public void OnItemUse(string itemName)
     {
-        int itemAmount = 0;
+        int itemAmount = PlayerPrefs.GetInt("ItemUse_" + itemName, 0);
+        itemAmount++;
+        PlayerPrefs.SetInt("ItemUse_" + itemName, itemAmount);
 
+        // สร้าง Event และส่งไป Analytics
         CustomEvent itemUseEvent = new CustomEvent("itemUse")
         {
-            {"itemName", itemName},
-            {"itemAmount", itemAmount }
+        {"itemName", itemName},
+        {"itemAmount", itemAmount }
         };
 
         AnalyticsService.Instance.RecordEvent(itemUseEvent);
@@ -41,7 +44,10 @@ public class AnalyticManager : MonoBehaviour
 
     public void WatchAd()
     {
-        int watchCount = 0;
+        int watchCount = PlayerPrefs.GetInt("watchCount", 0);
+        watchCount++;
+        PlayerPrefs.SetInt("watchCount", watchCount);
+
         CustomEvent watchAdEvent = new CustomEvent("watchAd")
         {
             {"watchCount", watchCount}
@@ -50,9 +56,26 @@ public class AnalyticManager : MonoBehaviour
         Debug.Log("Watch Ad Record");
     }
 
+    public void GameStart()
+    {
+        int gameStartCount = PlayerPrefs.GetInt("gameStartCount", 0);
+        gameStartCount++;
+        PlayerPrefs.SetInt("gameStartCount", gameStartCount);
+
+        CustomEvent gameStartEvent = new CustomEvent("gameStartCount")
+        {
+            {"gameStartCount", gameStartCount}
+        };
+        AnalyticsService.Instance.RecordEvent(gameStartEvent);
+        Debug.Log("Game Start Record");
+    }
+
     public void GameOver()
     {
-        int gameOverCount = 0;
+        int gameOverCount = PlayerPrefs.GetInt("gameOverCount", 0);
+        gameOverCount++;
+        PlayerPrefs.SetInt("gameOverCount", gameOverCount);
+
         CustomEvent gameOverEvent = new CustomEvent("gameOver")
         {
             {"gameOverCount", gameOverCount}
