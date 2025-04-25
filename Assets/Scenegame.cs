@@ -24,6 +24,7 @@ public class Scenegame : MonoBehaviour
 
         // 2. โหลด Scene เดิมอีกครั้งโดยใช้ Build Index
         SceneManager.LoadScene(currentSceneIndex);
+        AnalyticManager.instance.GameStart();
     }
 
     public void MainMenu()

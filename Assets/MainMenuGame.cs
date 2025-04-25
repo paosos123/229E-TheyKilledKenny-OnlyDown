@@ -31,6 +31,7 @@ public class MainMenuGame : MonoBehaviour
         mainMenuPaenl.SetActive(false);
         levelSeleMenu.SetActive(true);
         bgMenu.SetActive(true);
+        AnalyticManager.instance.GameStart();
     }
 
 }
