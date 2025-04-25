@@ -181,6 +181,7 @@ public class Movement : MonoBehaviour
         FreezeRigidbody();
         gameOverCondition = true;
         StartCoroutine(ShowGameOverPanelWithDelay());
+        AnalyticManager.instance.GameOver();
     }
 
     IEnumerator ShowGameOverPanelWithDelay()

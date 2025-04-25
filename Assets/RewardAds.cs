@@ -79,6 +79,7 @@ public class RewardAds : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowList
         _showAdButton.interactable = false;
         // Then show the ad:
         Advertisement.Show(_adUnitId, this);
+        AnalyticManager.instance.WatchAd();
     }
 
     IEnumerator CountdownToContinue()
