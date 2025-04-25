@@ -57,6 +57,9 @@ public class Movement : MonoBehaviour
     private SphereCollider sphereCollider;
     private bool hasSkillBeenSelected = false;
     public int nextSceneLoad;
+
+    private bool isContinueUsed = false;
+    private RewardAds rewardAds;
     void Awake()
     {
         playerInput = GetComponent<PlayerInput>();
@@ -82,6 +85,12 @@ public class Movement : MonoBehaviour
         if (sphereCollider == null)
         {
             Debug.LogWarning("SphereCollider component not found on this GameObject. Toggle Trigger skill will not function.");
+        }
+
+        rewardAds = GetComponent<RewardAds>();
+        if (rewardAds != null)
+        {
+            rewardAds.onAdSuccess = ContinueAfterAd;
         }
     }
 
@@ -180,7 +189,7 @@ public class Movement : MonoBehaviour
         gameOverPanel.SetActive(true);
         BGPanel.SetActive(true);
         BarSkillPanel.SetActive(false);
-        Destroy(gameObject);
+        //Destroy(gameObject);
     }
 
     void HandleWinCondition()
@@ -363,4 +372,37 @@ public class Movement : MonoBehaviour
     {
         startTime = Time.time;
     }
+
+    public void ContinueAfterAd()
+    {
+        if (isContinueUsed) return;
+
+        Debug.Log("Continuing after ad...");
+        isContinueUsed = true;
+
+        // ปิด Panel และ UI
+        gameOverPanel.SetActive(false);
+        BGPanel.SetActive(false);
+        BarSkillPanel.SetActive(true);
+
+        // ปล่อย Rigidbody
+        if (rb != null)
+        {
+            rb.constraints = RigidbodyConstraints.None;
+            //rb.constraints = RigidbodyConstraints.FreezeRotation;
+        }
+
+        // ย้ายตัวละครออกจาก trap หรือพื้นที่ตก
+        transform.position = new Vector3(transform.position.x, 1f, transform.position.z);
+
+        // เติม skill บางส่วน (หรือทั้งหมดก็ได้)
+        currentSlowFall = maxSlowFall / 2f;
+
+        // กลับมาเล่นต่อ
+        gameOverCondition = false;
+
+        isTimerActive = true;
+    }
+
+
 }
